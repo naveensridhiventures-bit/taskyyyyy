@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Check } from 'lucide-react'
 
@@ -119,7 +120,8 @@ export function Ring({ value, size = 132, stroke = 11, children }) {
 }
 
 export function Sheet({ open, onClose, title, children }) {
-  return (
+  // Portal to <body>: a transformed page wrapper would otherwise trap the sheet below the nav bar
+  return createPortal(
     <AnimatePresence>
       {open && [
         <motion.div key="s" className="scrim" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} />,
@@ -135,7 +137,8 @@ export function Sheet({ open, onClose, title, children }) {
           {children}
         </motion.div>
       ]}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   )
 }
 
