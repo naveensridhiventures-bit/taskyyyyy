@@ -1,5 +1,10 @@
-const URL = import.meta.env.VITE_SCRIPT_URL
-const TOKEN = import.meta.env.VITE_TOKEN || ''
+// Your deployed Apps Script web app. Env vars (if set) override these defaults.
+const DEFAULT_URL = 'https://script.google.com/macros/s/AKfycbxLBka5RSy0MzDhPcdh1RKMS71rQNcFqufiBuuriALCbmYmIkNjJ5WohP5LHn81ABgshg/exec'
+// Must match TOKEN inside Code.gs
+const DEFAULT_TOKEN = 'change-this-secret'
+
+const URL = import.meta.env.VITE_SCRIPT_URL || DEFAULT_URL
+const TOKEN = import.meta.env.VITE_TOKEN || DEFAULT_TOKEN
 
 export const configured = !!URL && !URL.includes('XXXX')
 
