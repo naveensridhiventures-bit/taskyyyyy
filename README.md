@@ -1,0 +1,34 @@
+# DailyFlow - React + Vite PWA with Google Sheet database
+
+Tasks (personal + work), daily schedule, South Indian diet log, learning plan with
+carry-over of missed items, and gym tracking. Data lives in your Google Sheet.
+
+## 1. Google Sheet backend
+1. Create a new Google Sheet.
+2. Extensions > Apps Script. Paste `apps-script/Code.gs`.
+3. Change `TOKEN` to your own secret.
+4. Run `setup` once (accept permissions). Tabs Tasks, Diet, Learning, Gym are created.
+5. Deploy > New deployment > Web app. Execute as: Me. Who has access: Anyone.
+6. Copy the Web app URL (ends with /exec).
+   After editing Code.gs later, use Deploy > Manage deployments > Edit > New version.
+
+## 2. Run the app
+```
+cp .env.example .env     # fill VITE_SCRIPT_URL and VITE_TOKEN
+npm install
+npm run dev
+```
+
+## 3. Publish and install as an app
+```
+npm run build
+```
+Upload `dist/` to Vercel or Netlify (add the two env vars there before building).
+Open the site on your phone, then Add to Home Screen. It works offline and syncs when online.
+
+## How things work
+- Every change saves on the device first, then goes to the sheet. Offline changes are queued and sent later.
+- Missed tasks and lessons stay in a glowing "pending" card on Today until ticked or moved to today.
+- Swipe a task or lesson left to delete it.
+- Reminders: tap "Reminders" to allow notifications. The app notifies once a day when it is opened
+  and items are pending. Notifications while the app is fully closed need a push server, which is not included.
