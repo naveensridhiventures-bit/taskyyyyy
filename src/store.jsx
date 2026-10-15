@@ -4,13 +4,21 @@ import { configured, fetchAll, send } from './api'
 const Ctx = createContext(null)
 export const useStore = () => useContext(Ctx)
 
-const EMPTY = { tasks: [], diet: [], learning: [], gym: [] }
+const EMPTY = { tasks: [], diet: [], learning: [], gym: [], daily: [], habits: [], finance: [], debts: [], accounts: [] }
 const load = (k, f) => { try { return JSON.parse(localStorage.getItem(k)) ?? f } catch { return f } }
 
 /* ---------- small helpers used everywhere ---------- */
-export const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6)
-export const isTrue = v => v === true || String(v).toLowerCase() === 'true'
 const pad = n => String(n).padStart(2, '0')
+export const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6)
+export const num = v => Number(v) || 0
+export const csv = s => (s === undefined || s === null || s === '' ? [] : String(s).split(',').filter(Boolean))
+export const ym = d => d.slice(0, 7)
+export const addMonths = (m, n) => { const [y, mo] = m.split('-').map(Number); const d = new Date(y, mo - 1 + n, 1); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}` }
+export const monthLabel = m => { const [y, mo] = m.split('-').map(Number); return new Date(y, mo - 1, 1).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }) }
+export const shortMonth = m => { const [y, mo] = m.split('-').map(Number); return new Date(y, mo - 1, 1).toLocaleDateString('en-IN', { month: 'short' }) }
+export const dayDefault = d => ({ id: `day-${d}`, date: d, water: 0, sleep: '', weight: '', win: '', top3: '', focus: 0, habits: '' })
+export const dayRow = (db, d) => db.daily.find(r => r.id === `day-${d}`) || dayDefault(d)
+export const isTrue = v => v === true || String(v).toLowerCase() === 'true'
 export const dstr = (d = new Date()) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 const toDate = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d) }
 export const addDays = (s, n) => { const d = toDate(s); d.setDate(d.getDate() + n); return dstr(d) }
@@ -25,6 +33,8 @@ export const fmtTime = t => {
 
 export function StoreProvider({ children }) {
   const [db, setDb] = useState(() => ({ ...EMPTY, ...load('df-db', EMPTY) }))
+  const dbRef = useRef(db)
+  const commit = next => { dbRef.current = next; setDb(next) }
   const [status, setStatus] = useState(configured ? 'syncing' : 'local')
   const queue = useRef(load('df-queue', []))
   const busy = useRef(false)
@@ -57,7 +67,7 @@ export function StoreProvider({ children }) {
     if (!(await flush())) return
     try {
       const data = await fetchAll()
-      if (!queue.current.length) setDb({ ...EMPTY, ...data })
+      if (!queue.current.length) commit({ ...EMPTY, ...data })
       setStatus('synced')
     } catch { setStatus('offline') }
   }, [flush])
@@ -71,11 +81,10 @@ export function StoreProvider({ children }) {
   }, [sync])
 
   const upsert = (table, row) => {
-    setDb(d => {
-      const list = d[table]
-      const i = list.findIndex(r => r.id === row.id)
-      return { ...d, [table]: i >= 0 ? list.map((r, j) => (j === i ? row : r)) : [...list, row] }
-    })
+    const cur = dbRef.current
+    const list = cur[table] || []
+    const i = list.findIndex(r => r.id === row.id)
+    commit({ ...cur, [table]: i >= 0 ? list.map((r, j) => (j === i ? row : r)) : [...list, row] })
     queue.current = queue.current.filter(o => !(o.op === 'upsert' && o.table === table && o.row.id === row.id))
     queue.current.push({ op: 'upsert', table, row })
     saveQ()
@@ -83,12 +92,16 @@ export function StoreProvider({ children }) {
   }
 
   const remove = (table, id) => {
-    setDb(d => ({ ...d, [table]: d[table].filter(r => r.id !== id) }))
-    queue.current = queue.current.filter(o => !(o.table === table && (o.row?.id === id)))
+    const cur = dbRef.current
+    commit({ ...cur, [table]: (cur[table] || []).filter(r => r.id !== id) })
+    queue.current = queue.current.filter(o => !(o.table === table && o.row?.id === id))
     queue.current.push({ op: 'delete', table, id })
     saveQ()
     if (configured) flush().then(ok => ok && setStatus('synced'))
   }
 
-  return <Ctx.Provider value={{ db, status, upsert, remove, sync }}>{children}</Ctx.Provider>
+  // one row per day holds water, sleep, weight, win, top3, focus minutes and habit ticks
+  const patchDay = (d, patch) => { const cur = dayRow(dbRef.current, d); upsert('daily', { ...cur, ...(typeof patch === 'function' ? patch(cur) : patch) }) }
+
+  return <Ctx.Provider value={{ db, status, upsert, remove, sync, patchDay }}>{children}</Ctx.Provider>
 }

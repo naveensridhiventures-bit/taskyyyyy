@@ -19,7 +19,12 @@ const SHEETS = {
   tasks:    { name: 'Tasks',    cols: ['id', 'title', 'type', 'date', 'time', 'done', 'notes', 'createdAt', 'updatedAt'] },
   diet:     { name: 'Diet',     cols: ['id', 'date', 'meal', 'items', 'updatedAt'] },
   learning: { name: 'Learning', cols: ['id', 'title', 'topic', 'date', 'done', 'createdAt', 'updatedAt'] },
-  gym:      { name: 'Gym',      cols: ['id', 'date', 'cardio', 'strength', 'updatedAt'] }
+  gym:      { name: 'Gym',      cols: ['id', 'date', 'cardio', 'strength', 'updatedAt'] },
+  daily:    { name: 'Daily',    cols: ['id', 'date', 'water', 'sleep', 'weight', 'win', 'top3', 'focus', 'habits', 'updatedAt'], num: ['water', 'sleep', 'weight', 'focus'] },
+  habits:   { name: 'Habits',   cols: ['id', 'title', 'emoji', 'days', 'time', 'start', 'active', 'updatedAt'] },
+  finance:  { name: 'Finance',  cols: ['id', 'date', 'type', 'category', 'amount', 'account', 'toAccount', 'note', 'updatedAt'], num: ['amount'] },
+  debts:    { name: 'Debts',    cols: ['id', 'person', 'direction', 'amount', 'paid', 'date', 'due', 'note', 'updatedAt'], num: ['amount', 'paid'] },
+  accounts: { name: 'Accounts', cols: ['id', 'name', 'kind', 'opening', 'updatedAt'], num: ['opening'] }
 };
 
 /** Run once manually to create all tabs with headers. */
@@ -74,8 +79,10 @@ function getSheet_(key) {
     sh.getRange(1, 1, 1, cfg.cols.length)
       .setValues([cfg.cols]).setFontWeight('bold').setBackground('#8b6cff').setFontColor('#ffffff');
     sh.setFrozenRows(1);
-    // plain text format so dates/booleans are never auto-converted
-    sh.getRange(1, 1, sh.getMaxRows(), cfg.cols.length).setNumberFormat('@');
+    // plain text for dates/booleans so they are never auto-converted; money and counts stay numeric
+    cfg.cols.forEach(function (c, i) {
+      if (!(cfg.num || []).includes(c)) sh.getRange(1, i + 1, sh.getMaxRows(), 1).setNumberFormat('@');
+    });
   }
   return sh;
 }
@@ -111,7 +118,11 @@ function upsert_(key, row) {
   const cfg = SHEETS[key];
   const sh = getSheet_(key);
   row.updatedAt = new Date().toISOString();
-  const values = cfg.cols.map(function (c) { return row[c] === undefined || row[c] === null ? '' : String(row[c]); });
+  const values = cfg.cols.map(function (c) {
+    const v = row[c];
+    if (v === undefined || v === null || v === '') return '';
+    return (cfg.num || []).includes(c) && !isNaN(Number(v)) ? Number(v) : String(v);
+  });
   const idx = findRow_(sh, row.id);
   if (idx > 0) sh.getRange(idx, 1, 1, cfg.cols.length).setValues([values]);
   else sh.appendRow(values);
@@ -204,12 +215,25 @@ function wrap_(heading, body) {
     '<p style="margin-top:26px;padding:14px;border-radius:12px;background:rgba(255,197,49,.15);color:#ffc531"><i>' + quote_() + '</i></p></div>';
 }
 
+function moneyLines_() {
+  const today = day_(0);
+  const lines = [];
+  readTable_('debts').forEach(function (d) {
+    const rem = Number(d.amount) - Number(d.paid || 0);
+    if (rem <= 0) return;
+    const rec = d.direction === 'receive';
+    if (d.due && d.due <= today) lines.push((rec ? 'Collect ' : 'Pay ') + 'Rs ' + rem + (rec ? ' from ' : ' to ') + d.person + ' <span style="color:#d33">(due ' + d.due + ')</span>');
+  });
+  return lines;
+}
+
 function sendMorningPlan() {
   const s = snapshot_();
   const late = s.lateTasks.map(lateLine_).concat(s.lateLearn.map(lateLine_));
   const body =
     list_('Clear these first (' + late.length + ')', '#ff5d73', late) +
     list_("Today's schedule", '#ffc531', s.todayTasks.map(taskLine_)) +
+    list_('Money due', '#3ddc97', moneyLines_()) +
     list_('Learning today', '#b9a6ff', s.todayLearn.map(function (l) { return l.title + (l.topic ? ' (' + l.topic + ')' : ''); })) +
     '<p style="margin-top:20px">Also today: log your 4 meals and finish cardio + strength. Gym streak: <b>' + s.streak + ' days</b>.</p>';
   MailApp.sendEmail({ to: EMAIL, subject: (late.length ? '⚠️ ' + late.length + ' pending - ' : '☀️ ') + "Your plan for today", htmlBody: wrap_('☀️ Good morning, Naveen', body || '<p>Nothing planned yet. Open DailyFlow and plan your day.</p>') });
@@ -223,6 +247,7 @@ function sendEveningCheck() {
   const body =
     list_('Still open today (' + open.length + ')', '#ffc531', open) +
     list_('Overdue from earlier (' + late.length + ')', '#ff5d73', late) +
+    list_('Money due', '#3ddc97', moneyLines_()) +
     '<p style="margin-top:20px;line-height:1.8">Meals logged: <b>' + s.meals + '/4</b><br>Cardio: <b>' + (s.cardio ? 'done' : 'not yet') + '</b><br>Strength: <b>' + (s.strength ? 'done' : 'not yet') + '</b></p>' +
     '<p>Anything unfinished moves to tomorrow\'s pending list. Tick what you did and plan tomorrow in 2 minutes.</p>';
   MailApp.sendEmail({ to: EMAIL, subject: (open.length + late.length ? '🌙 ' + (open.length + late.length) + ' still open' : '🌙 All clear today') + ' - evening check', htmlBody: wrap_('🌙 Evening check', body) });

@@ -32,3 +32,12 @@ Open the site on your phone, then Add to Home Screen. It works offline and syncs
 - Swipe a task or lesson left to delete it.
 - Reminders: tap "Reminders" to allow notifications. The app notifies once a day when it is opened
   and items are pending. Notifications while the app is fully closed need a push server, which is not included.
+
+
+## v5 features
+- Top 3 priorities, habits (repeating), focus timer, weekly review with badges, win of the day
+- Health: diet with calories and protein, gym, water, sleep, weight chart
+- Money: bank and cash balances, income / expense / transfer with 40+ categories, people who owe you and
+  people you owe (partial payments, due dates), monthly charts
+- Sheet tabs created automatically: Daily, Habits, Finance, Debts, Accounts
+- After updating Code.gs: Deploy > Manage deployments > Edit > New version (keep your TOKEN value)

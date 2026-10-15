@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Check } from 'lucide-react'
+import { motion, AnimatePresence, animate } from 'framer-motion'
+import { Check, Trash2, Plus } from 'lucide-react'
 
 export const spring = { type: 'spring', stiffness: 420, damping: 30 }
 const SPARK = ['#ffc531', '#ff5d73', '#3ddc97', '#8b6cff', '#4cc9f0']
@@ -148,5 +148,62 @@ export function Empty({ emoji, text }) {
       <motion.div className="empty-e" animate={{ y: [0, -10, 0] }} transition={{ repeat: Infinity, duration: 2.4, ease: 'easeInOut' }}>{emoji}</motion.div>
       <p>{text}</p>
     </motion.div>
+  )
+}
+
+/* segmented control with a sliding pill */
+export function Seg({ id, value, options, onChange }) {
+  return (
+    <div className="seg-wrap">
+      <div className="seg">
+        {options.map(o => (
+          <button key={o.k} className={value === o.k ? 'on' : ''} onClick={() => onChange(o.k)}>
+            {value === o.k && <motion.span layoutId={`seg-${id}`} className="segbg" transition={spring} />}
+            <span>{o.label}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/* number that counts up to its value */
+const fmtNum = (v, prefix, dec) => {
+  const n = dec ? v.toFixed(dec) : Math.round(v).toLocaleString('en-IN')
+  return `${v < 0 ? '-' : ''}${prefix}${String(n).replace('-', '')}`
+}
+export function Num({ value, prefix = '', decimals = 0, className }) {
+  const ref = useRef(null)
+  const prev = useRef(0)
+  useEffect(() => {
+    const c = animate(prev.current, value, {
+      duration: 1.1, ease: [0.2, 0.8, 0.2, 1],
+      onUpdate: v => { if (ref.current) ref.current.textContent = fmtNum(v, prefix, decimals) }
+    })
+    prev.current = value
+    return () => c.stop()
+  }, [value, prefix, decimals])
+  return <span ref={ref} className={className}>{fmtNum(0, prefix, decimals)}</span>
+}
+
+/* row you can swipe left to delete */
+export function Swipe({ children, onDelete, className = 'row' }) {
+  return (
+    <motion.div layout className="row-wrap" initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -140, transition: { duration: 0.25 } }} transition={spring}>
+      <div className="row-del"><Trash2 size={20} /></div>
+      <motion.div className={className} drag="x" dragConstraints={{ left: 0, right: 0 }} dragElastic={{ left: 0.6, right: 0 }} onDragEnd={(e, i) => { if (i.offset.x < -90) onDelete() }}>
+        {children}
+      </motion.div>
+    </motion.div>
+  )
+}
+
+/* floating add button, rendered on <body> so it is never trapped under other layers */
+export function Fab({ onClick }) {
+  return createPortal(
+    <motion.button className="fab" initial={{ scale: 0, rotate: -90 }} animate={{ scale: 1, rotate: 0 }} whileTap={{ scale: 0.85, rotate: 90 }} whileHover={{ scale: 1.08 }} transition={spring} onClick={onClick} aria-label="Add">
+      <Plus size={28} />
+    </motion.button>,
+    document.body
   )
 }

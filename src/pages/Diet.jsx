@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, X, ChevronLeft, ChevronRight, Check } from 'lucide-react'
 import { useStore, dstr, addDays, prettyDate } from '../store'
-import { Page, Card, Title, Sheet, spring } from '../ui'
-import { MEALS, FOODS } from '../foods'
+import { Page, Card, Title, Sheet, Num, spring } from '../ui'
+import { MEALS, FOODS, nutrition, KCAL_GOAL, PROTEIN_GOAL } from '../foods'
 
 export const dietId = (date, meal) => `diet-${date}-${meal}`
 export const splitItems = s => (s ? String(s).split('|').filter(Boolean) : [])
@@ -56,6 +56,8 @@ export default function Diet() {
   const [pick, setPick] = useState(null)
 
   const logged = MEALS.filter(m => splitItems(db.diet.find(r => r.id === dietId(date, m.key))?.items).length).length
+  const all = MEALS.flatMap(m => splitItems(db.diet.find(r => r.id === dietId(date, m.key))?.items))
+  const total = nutrition(all)
 
   return (
     <Page>
@@ -72,13 +74,27 @@ export default function Diet() {
         </div>
       </Card>
 
+      <Card className="nutri">
+        <div className="nutri-col">
+          <small>Calories (approx)</small>
+          <b><Num value={total.kcal} /> <em>/ {KCAL_GOAL}</em></b>
+          <div className="bar big"><motion.i initial={{ width: 0 }} animate={{ width: `${Math.min(100, (total.kcal / KCAL_GOAL) * 100)}%` }} transition={{ duration: 1 }} style={{ background: total.kcal > KCAL_GOAL ? '#ff5d73' : 'linear-gradient(90deg,#ffc531,#ff8a4c)' }} /></div>
+        </div>
+        <div className="nutri-col">
+          <small>Protein</small>
+          <b><Num value={total.protein} /> g <em>/ {PROTEIN_GOAL}</em></b>
+          <div className="bar big"><motion.i initial={{ width: 0 }} animate={{ width: `${Math.min(100, (total.protein / PROTEIN_GOAL) * 100)}%` }} transition={{ duration: 1, delay: 0.1 }} style={{ background: 'linear-gradient(90deg,#3ddc97,#4cc9f0)' }} /></div>
+        </div>
+      </Card>
+
       {MEALS.map(m => {
         const items = splitItems(db.diet.find(r => r.id === dietId(date, m.key))?.items)
+        const n = nutrition(items)
         return (
           <Card key={m.key} className="meal" style={{ borderColor: items.length ? m.color + '88' : undefined }}>
             <div className="meal-h">
               <div className="meal-e" style={{ background: m.color + '33' }}>{m.emoji}</div>
-              <div><h4>{m.label}</h4><small>{m.time}</small></div>
+              <div><h4>{m.label}</h4><small>{m.time}{items.length > 0 && n.kcal > 0 ? ` · ${n.kcal} kcal · ${n.protein} g protein` : ''}</small></div>
               <motion.button className="add" style={{ background: m.color }} whileTap={{ scale: 0.8, rotate: 90 }} onClick={() => setPick(m)}><Plus size={20} strokeWidth={3} /></motion.button>
             </div>
             {items.length > 0 ? (

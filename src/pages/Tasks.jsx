@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Briefcase, User, Clock, Trash2, Plus, CalendarClock } from 'lucide-react'
 import { useStore, uid, dstr, addDays, isTrue, prettyDate, weekday, dayNum, fmtTime } from '../store'
-import { Page, Card, Title, CheckBtn, Sheet, Empty, spring } from '../ui'
+import { Page, Card, Title, CheckBtn, Sheet, Empty, Fab, spring } from '../ui'
 
 export function TaskRow({ t, i = 0 }) {
   const { upsert, remove } = useStore()
@@ -114,11 +114,11 @@ export default function Tasks() {
       )}
       <div className="sec">{sel === today ? 'Today' : prettyDate(sel)} · swipe left to delete</div>
       <div className="rows">
-        <AnimatePresence mode="popLayout">{list.map((t, i) => <TaskRow key={t.id} t={t} i={i} />)}</AnimatePresence>
+        <AnimatePresence>{list.map((t, i) => <TaskRow key={t.id} t={t} i={i} />)}</AnimatePresence>
       </div>
       {list.length === 0 && overdue.length === 0 && <Empty emoji="🌴" text="Nothing planned for this day. Tap + to add a task." />}
 
-      <motion.button className="fab" whileTap={{ scale: 0.85, rotate: 90 }} whileHover={{ scale: 1.08 }} onClick={() => setOpen(true)} initial={{ scale: 0 }} animate={{ scale: 1 }} transition={spring}><Plus size={28} /></motion.button>
+      <Fab onClick={() => setOpen(true)} />
       <TaskForm open={open} onClose={() => setOpen(false)} date={sel} />
     </Page>
   )

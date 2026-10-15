@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Bell, Trash2, Plus, BookOpen, CalendarClock } from 'lucide-react'
 import { useStore, uid, dstr, addDays, isTrue, prettyDate, weekday } from '../store'
-import { Page, Card, Title, CheckBtn, Sheet, Empty, spring } from '../ui'
+import { Page, Card, Title, CheckBtn, Sheet, Empty, Fab, spring } from '../ui'
 import { TOPICS } from '../foods'
 
 export function LearnRow({ l, i = 0 }) {
@@ -112,7 +112,7 @@ export default function Learn() {
       </Card>
 
       <div className="sec">Today · swipe left to delete</div>
-      <div className="rows"><AnimatePresence mode="popLayout">{todays.map((l, i) => <LearnRow key={l.id} l={l} i={i} />)}</AnimatePresence></div>
+      <div className="rows"><AnimatePresence>{todays.map((l, i) => <LearnRow key={l.id} l={l} i={i} />)}</AnimatePresence></div>
       {todays.length === 0 && <Empty emoji="📚" text="Nothing planned for today. Tap + to schedule a lesson." />}
 
       {upcoming.length > 0 && (
@@ -129,7 +129,7 @@ export default function Learn() {
         </>
       )}
 
-      <motion.button className="fab" whileTap={{ scale: 0.85, rotate: 90 }} whileHover={{ scale: 1.08 }} onClick={() => setOpen(true)} initial={{ scale: 0 }} animate={{ scale: 1 }} transition={spring}><Plus size={28} /></motion.button>
+      <Fab onClick={() => setOpen(true)} />
       <LearnForm open={open} onClose={() => setOpen(false)} />
     </Page>
   )
