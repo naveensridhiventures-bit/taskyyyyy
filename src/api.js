@@ -1,5 +1,5 @@
 // Your deployed Apps Script web app. Env vars (if set) override these defaults.
-const DEFAULT_URL = 'https://script.google.com/macros/s/AKfycbyANjexicP-EhNMCEvZIRQCbEv-yAStzDkpAIGje1pFpWE1DuWX8tg2SyytMzzCj91S/exec'
+const DEFAULT_URL = 'https://script.google.com/macros/s/AKfycbxprAiEhO0yV3fZiQ8e_Gh1ENXBAZXKRh34i2_GSixLSI5g4K9_vDdsR0J1RgHBo4ZvNA/exec'
 // Must match TOKEN inside Code.gs
 const DEFAULT_TOKEN = 'change-this-secret'
 
