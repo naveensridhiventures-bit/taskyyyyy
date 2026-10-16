@@ -26,7 +26,7 @@ function SyncPill() {
     synced: { Icon: Cloud, text: 'Synced', cls: 'ok' },
     offline: { Icon: CloudOff, text: 'Offline', cls: 'bad' }
   }[status]
-  return <motion.button layout className={`pill ${map.cls}`} onClick={sync} whileTap={{ scale: 0.92 }}><map.Icon size={14} /> {map.text}</motion.button>
+  return <motion.button layout className={`pill ${map.cls}`} onClick={sync} whileTap={{ scale: 0.92 }}><map.Icon size={14} /> <span className="lbl">{map.text}</span></motion.button>
 }
 
 function TimerPill({ go }) {
@@ -74,11 +74,11 @@ function Shell() {
           <div className="brand"><b><span style={{ fontSize: 15 }}>✓</span></b> DailyFlow</div>
           <div className="tools">
             <TimerPill go={go} />
-            {perm === 'default' && <motion.button className="pill" whileTap={{ scale: 0.9 }} onClick={askPerm}><Bell size={14} /> Reminders</motion.button>}
+            {perm === 'default' && <motion.button className="pill" whileTap={{ scale: 0.9 }} onClick={askPerm}><Bell size={14} /> <span className="lbl">Reminders</span></motion.button>}
             <SyncPill />
           </div>
         </div>
-        <motion.div key={tab} initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.25 }}>{view}</motion.div>
+        <motion.div key={tab} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>{view}</motion.div>
       </div>
 
       <nav className="nav">
@@ -86,7 +86,7 @@ function Shell() {
           <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>
             {tab === k && <motion.div layoutId="navbg" className="navbg" transition={spring} />}
             <motion.span animate={tab === k ? { y: [0, -6, 0], scale: [1, 1.2, 1] } : {}} transition={{ duration: 0.4 }} style={{ display: 'flex' }}><Icon size={21} /></motion.span>
-            {label}
+            <span>{label}</span>
           </button>
         ))}
       </nav>

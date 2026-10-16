@@ -101,9 +101,9 @@ export default function Txns() {
     <Page>
       <Card style={{ padding: 10 }}>
         <div className="monthnav">
-          <motion.button whileTap={{ scale: 0.8 }} className="add" onClick={() => setMonth(addMonths(month, -1))}><ChevronLeft /></motion.button>
+          <motion.button whileTap={{ scale: 0.8 }} className="add arrow" onClick={() => setMonth(addMonths(month, -1))}><ChevronLeft /></motion.button>
           <AnimatePresence mode="wait"><motion.b key={month} initial={{ y: 12, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -12, opacity: 0 }} transition={{ duration: 0.18 }}>{monthLabel(month)}</motion.b></AnimatePresence>
-          <motion.button whileTap={{ scale: 0.8 }} className="add" disabled={month >= ym(dstr())} style={{ opacity: month >= ym(dstr()) ? 0.25 : 1 }} onClick={() => setMonth(addMonths(month, 1))}><ChevronRight /></motion.button>
+          <motion.button whileTap={{ scale: 0.8 }} className="add arrow" disabled={month >= ym(dstr())} style={{ opacity: month >= ym(dstr()) ? 0.25 : 1 }} onClick={() => setMonth(addMonths(month, 1))}><ChevronRight /></motion.button>
         </div>
       </Card>
       <div className="tiles">

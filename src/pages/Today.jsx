@@ -32,7 +32,7 @@ function Top3({ open: pend }) {
       <div className="card-h"><h4><Star size={16} style={{ verticalAlign: -2, color: '#ffc531' }} fill="#ffc531" /> Top 3 priorities</h4><small className="hint">Win these first</small></div>
       <div className="rows">
         {slots.map((t, i) => t ? (
-          <motion.div key={t.id} layout className={`slot filled ${isTrue(t.done) ? 'done' : ''}`}>
+          <motion.div key={t.id} className={`slot filled ${isTrue(t.done) ? 'done' : ''}`}>
             <CheckBtn size={26} done={isTrue(t.done)} onChange={v => upsert('tasks', { ...t, done: v })} />
             <div className="row-main"><div className="row-title">{t.title}</div></div>
             <button className="x" onClick={() => set(ids.filter(x => x !== t.id))} aria-label="Remove">×</button>
@@ -148,7 +148,7 @@ export default function Today({ go }) {
 
       <div className="tiles two-col">
         {tiles.map(t => (
-          <motion.button key={t.label} variants={rise} whileTap={{ scale: 0.94 }} whileHover={{ y: -4 }} className="card tile" onClick={() => go(...t.to)}>
+          <motion.button key={t.label} variants={rise} whileTap={{ scale: 0.94 }} className="card tile" onClick={() => go(...t.to)}>
             <div className="ic" style={{ background: t.color + '2e', color: t.color }}><t.Icon size={18} /></div>
             <b>{t.val}</b><span>{t.label}</span>
             <div className="bar"><motion.i initial={{ width: 0 }} animate={{ width: `${t.p * 100}%` }} transition={{ duration: 1, delay: 0.4 }} style={{ background: t.color }} /></div>

@@ -11,7 +11,7 @@ export function TaskRow({ t, i = 0 }) {
   const late = !done && t.date < today
   return (
     <motion.div
-      layout className="row-wrap"
+      className="row-wrap"
       initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -140, transition: { duration: 0.25 } }}
       transition={{ ...spring, delay: Math.min(i, 8) * 0.04 }}
@@ -30,8 +30,8 @@ export function TaskRow({ t, i = 0 }) {
             {t.time && <span className="tag time"><Clock size={11} /> {fmtTime(t.time)}</span>}
             {late && <span className="tag late"><CalendarClock size={11} /> {prettyDate(t.date)}</span>}
           </div>
+          {late && <button className="mini" style={{ marginTop: 10 }} onClick={() => upsert('tasks', { ...t, date: today })}>Move to today</button>}
         </div>
-        {late && <button className="mini" onClick={() => upsert('tasks', { ...t, date: today })}>Move to today</button>}
       </motion.div>
     </motion.div>
   )

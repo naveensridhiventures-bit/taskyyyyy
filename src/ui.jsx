@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useId } from 'react'
 import { createPortal } from 'react-dom'
-import { motion, AnimatePresence, animate } from 'framer-motion'
+import { motion, AnimatePresence, animate, useDragControls } from 'framer-motion'
 import { Check, Trash2, Plus } from 'lucide-react'
 
 export const spring = { type: 'spring', stiffness: 420, damping: 30 }
@@ -92,6 +92,7 @@ export function CheckBtn({ done, onChange, size = 30 }) {
 }
 
 export function Ring({ value, size = 132, stroke = 11, children }) {
+  const gid = useId().replace(/:/g, '')
   const r = (size - stroke) / 2
   const c = 2 * Math.PI * r
   const v = Math.max(0, Math.min(1, value || 0))
@@ -99,14 +100,14 @@ export function Ring({ value, size = 132, stroke = 11, children }) {
     <div className="ring" style={{ width: size, height: size }}>
       <svg width={size} height={size}>
         <defs>
-          <linearGradient id="ringg" x1="0" y1="0" x2="1" y2="1">
+          <linearGradient id={gid} x1="0" y1="0" x2="1" y2="1">
             <stop offset="0" stopColor="#ffc531" />
             <stop offset="1" stopColor="#ff5d73" />
           </linearGradient>
         </defs>
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(255,244,224,.12)" strokeWidth={stroke} />
         <motion.circle
-          cx={size / 2} cy={size / 2} r={r} fill="none" stroke="url(#ringg)" strokeWidth={stroke}
+          cx={size / 2} cy={size / 2} r={r} fill="none" stroke={`url(#${gid})`} strokeWidth={stroke}
           strokeLinecap="round" strokeDasharray={c}
           transform={`rotate(-90 ${size / 2} ${size / 2})`}
           initial={{ strokeDashoffset: c }}
@@ -120,6 +121,14 @@ export function Ring({ value, size = 132, stroke = 11, children }) {
 }
 
 export function Sheet({ open, onClose, title, children }) {
+  const controls = useDragControls()
+  // lock the page behind the sheet while it is open
+  useEffect(() => {
+    if (!open) return
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = prev }
+  }, [open])
   // Portal to <body>: a transformed page wrapper would otherwise trap the sheet below the nav bar
   return createPortal(
     <AnimatePresence>
@@ -129,11 +138,14 @@ export function Sheet({ open, onClose, title, children }) {
           key="p" className="sheet"
           initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
           transition={{ type: 'spring', damping: 30, stiffness: 320 }}
-          drag="y" dragConstraints={{ top: 0, bottom: 0 }} dragElastic={{ top: 0, bottom: 0.7 }}
-          onDragEnd={(e, i) => { if (i.offset.y > 110) onClose() }}
+          drag="y" dragControls={controls} dragListener={false}
+          dragConstraints={{ top: 0, bottom: 0 }} dragElastic={{ top: 0, bottom: 0.7 }}
+          onDragEnd={(e, i) => { if (i.offset.y > 110 || i.velocity.y > 600) onClose() }}
         >
-          <div className="grab" />
-          <h3>{title}</h3>
+          <div className="sheet-head" onPointerDown={e => controls.start(e)}>
+            <div className="grab" />
+            <h3>{title}</h3>
+          </div>
           {children}
         </motion.div>
       ]}
@@ -189,7 +201,7 @@ export function Num({ value, prefix = '', decimals = 0, className }) {
 /* row you can swipe left to delete */
 export function Swipe({ children, onDelete, className = 'row' }) {
   return (
-    <motion.div layout className="row-wrap" initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -140, transition: { duration: 0.25 } }} transition={spring}>
+    <motion.div className="row-wrap" initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -140, transition: { duration: 0.25 } }} transition={spring}>
       <div className="row-del"><Trash2 size={20} /></div>
       <motion.div className={className} drag="x" dragConstraints={{ left: 0, right: 0 }} dragElastic={{ left: 0.6, right: 0 }} onDragEnd={(e, i) => { if (i.offset.x < -90) onDelete() }}>
         {children}
@@ -201,7 +213,7 @@ export function Swipe({ children, onDelete, className = 'row' }) {
 /* floating add button, rendered on <body> so it is never trapped under other layers */
 export function Fab({ onClick }) {
   return createPortal(
-    <motion.button className="fab" initial={{ scale: 0, rotate: -90 }} animate={{ scale: 1, rotate: 0 }} whileTap={{ scale: 0.85, rotate: 90 }} whileHover={{ scale: 1.08 }} transition={spring} onClick={onClick} aria-label="Add">
+    <motion.button className="fab" initial={{ scale: 0, rotate: -90 }} animate={{ scale: 1, rotate: 0 }} whileTap={{ scale: 0.85, rotate: 90 }} transition={spring} onClick={onClick} aria-label="Add">
       <Plus size={28} />
     </motion.button>,
     document.body

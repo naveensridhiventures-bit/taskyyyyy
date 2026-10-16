@@ -37,7 +37,7 @@ function FoodPicker({ meal, date, onClose }) {
           {shown.map(f => {
             const on = chosen.includes(f)
             return (
-              <motion.button key={f} layout whileTap={{ scale: 0.88 }} className={`chip ${on ? 'on' : ''}`} style={{ '--c': meal.color }} onClick={() => toggle(f)}>
+              <motion.button key={f} whileTap={{ scale: 0.88 }} className={`chip ${on ? 'on' : ''}`} style={{ '--c': meal.color }} onClick={() => toggle(f)}>
                 {on && <Check size={14} strokeWidth={3} />} {f}
               </motion.button>
             )
@@ -64,13 +64,13 @@ export default function Diet() {
       <Title emoji="🍛" title="Diet" sub={`${logged} of 4 meals logged`} />
       <Card className="" style={{ padding: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <motion.button whileTap={{ scale: 0.8 }} className="add" onClick={() => setDate(addDays(date, -1))}><ChevronLeft /></motion.button>
+          <motion.button whileTap={{ scale: 0.8 }} className="add arrow" onClick={() => setDate(addDays(date, -1))}><ChevronLeft /></motion.button>
           <AnimatePresence mode="wait">
             <motion.b key={date} initial={{ y: 12, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -12, opacity: 0 }} transition={{ duration: 0.18 }}>
               {date === today ? 'Today' : prettyDate(date)}
             </motion.b>
           </AnimatePresence>
-          <motion.button whileTap={{ scale: 0.8 }} className="add" disabled={date >= today} style={{ opacity: date >= today ? 0.25 : 1 }} onClick={() => setDate(addDays(date, 1))}><ChevronRight /></motion.button>
+          <motion.button whileTap={{ scale: 0.8 }} className="add arrow" disabled={date >= today} style={{ opacity: date >= today ? 0.25 : 1 }} onClick={() => setDate(addDays(date, 1))}><ChevronRight /></motion.button>
         </div>
       </Card>
 
@@ -101,7 +101,7 @@ export default function Diet() {
               <div className="chips">
                 <AnimatePresence>
                   {items.map(f => (
-                    <motion.span key={f} layout initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0, opacity: 0 }} transition={spring} className="chip on" style={{ '--c': m.color }}>
+                    <motion.span key={f} initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0, opacity: 0 }} transition={spring} className="chip on" style={{ '--c': m.color }}>
                       {f}
                       <button onClick={() => upsert('diet', { id: dietId(date, m.key), date, meal: m.key, items: items.filter(x => x !== f).join('|') })} aria-label={`Remove ${f}`}><X size={14} strokeWidth={3} /></button>
                     </motion.span>

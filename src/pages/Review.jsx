@@ -59,7 +59,7 @@ export default function Review() {
         <h4 style={{ marginBottom: 12 }}>Badges · {bs.filter(b => b.ok).length}/{bs.length}</h4>
         <div className="badges">
           {bs.map((b, i) => (
-            <motion.div key={b.id} className={`badge ${b.ok ? 'on' : ''}`} initial={{ opacity: 0, scale: 0.5, rotate: -10 }} animate={{ opacity: 1, scale: 1, rotate: 0 }} transition={{ ...spring, delay: 0.1 + i * 0.06 }} whileHover={{ scale: 1.08, rotate: 3 }}>
+            <motion.div key={b.id} className={`badge ${b.ok ? 'on' : ''}`} initial={{ opacity: 0, scale: 0.5, rotate: -10 }} animate={{ opacity: 1, scale: 1, rotate: 0 }} transition={{ ...spring, delay: 0.1 + i * 0.06 }}>
               <span>{b.e}</span><b>{b.t}</b><small>{b.d}</small>
             </motion.div>
           ))}

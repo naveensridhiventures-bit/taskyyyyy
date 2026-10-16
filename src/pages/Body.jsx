@@ -52,7 +52,7 @@ export default function Body() {
       <Card className="water-card">
         <div className="card-h"><h4><Droplet size={16} style={{ verticalAlign: -2 }} /> Water</h4><b><Num value={water * 0.25} decimals={2} /> L</b></div>
         <div className="tank">
-          <motion.div className="tank-fill" initial={{ height: '0%' }} animate={{ height: `${Math.min(100, (water / GOAL) * 100)}%` }} transition={{ type: 'spring', stiffness: 80, damping: 16 }}><div className="wave" /><div className="wave w2" /></motion.div>
+          <motion.div className="tank-fill" initial={{ height: '0%' }} animate={{ height: `${Math.min(100, (water / GOAL) * 100)}%` }} transition={{ type: 'spring', stiffness: 80, damping: 16 }}><div className="tank-wave" /><div className="tank-wave w2" /></motion.div>
           <div className="tank-text"><b>{water}</b><small>of {GOAL} glasses</small></div>
         </div>
         <div className="glasses">
