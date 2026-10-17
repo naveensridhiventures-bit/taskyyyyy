@@ -1,14 +1,19 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Home, ListTodo, HeartPulse, Sprout, Wallet, RefreshCw, CloudOff, Cloud, HardDrive, Bell, Timer } from 'lucide-react'
+import { Home, ListTodo, HeartPulse, Sprout, Wallet, RefreshCw, CloudOff, Cloud, HardDrive, Bell, Timer, Settings as SettingsIcon } from 'lucide-react'
 import { useStore, dstr, isTrue } from './store'
 import { TimerProvider, useTimer } from './timer'
+import { EditProvider } from './edit'
+import { LockGate } from './lock'
+import Alarm from './Alarm'
+import { unlockAudio } from './alarm'
 import { spring } from './ui'
 import Today from './pages/Today'
 import Tasks from './pages/Tasks'
 import Health from './pages/Health'
 import Grow from './pages/Grow'
 import Money from './pages/Money'
+import Settings from './pages/Settings'
 
 const TABS = [
   { k: 'today', label: 'Today', Icon: Home },
@@ -45,6 +50,7 @@ function Shell() {
   const [subs, setSubs] = useState({ health: 'diet', grow: 'learn', money: 'overview' })
   const { db } = useStore()
   const [perm, setPerm] = useState(typeof Notification !== 'undefined' ? Notification.permission : 'denied')
+  useEffect(() => { const u = () => unlockAudio(); window.addEventListener('pointerdown', u, { once: true }); return () => window.removeEventListener('pointerdown', u) }, [])
   const go = (t, s) => { if (s) setSubs(x => ({ ...x, [t]: s })); setTab(t) }
   const setSub = t => s => setSubs(x => ({ ...x, [t]: s }))
 
@@ -63,7 +69,8 @@ function Shell() {
     tasks: <Tasks />,
     health: <Health sub={subs.health} setSub={setSub('health')} />,
     grow: <Grow sub={subs.grow} setSub={setSub('grow')} />,
-    money: <Money sub={subs.money} setSub={setSub('money')} />
+    money: <Money sub={subs.money} setSub={setSub('money')} />,
+    settings: <Settings onBack={() => setTab('today')} />
   }[tab]
 
   return (
@@ -76,11 +83,13 @@ function Shell() {
             <TimerPill go={go} />
             {perm === 'default' && <motion.button className="pill" whileTap={{ scale: 0.9 }} onClick={askPerm}><Bell size={14} /> <span className="lbl">Reminders</span></motion.button>}
             <SyncPill />
+            <motion.button className={`pill ${tab === 'settings' ? 'ok' : ''}`} whileTap={{ scale: 0.9 }} onClick={() => setTab('settings')} aria-label="Settings"><SettingsIcon size={15} /></motion.button>
           </div>
         </div>
         <motion.div key={tab} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>{view}</motion.div>
       </div>
 
+      <Alarm />
       <nav className="nav">
         {TABS.map(({ k, label, Icon }) => (
           <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>
@@ -95,5 +104,5 @@ function Shell() {
 }
 
 export default function App() {
-  return <TimerProvider><Shell /></TimerProvider>
+  return <TimerProvider><EditProvider><LockGate><Shell /></LockGate></EditProvider></TimerProvider>
 }

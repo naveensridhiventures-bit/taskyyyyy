@@ -70,7 +70,7 @@ function Win() {
 }
 
 export default function Today({ go }) {
-  const { db, patchDay } = useStore()
+  const { db, patchDay, settings } = useStore()
   const [open, setOpen] = useState(false)
   const today = dstr()
   const hour = new Date().getHours()
@@ -109,7 +109,7 @@ export default function Today({ go }) {
     { to: ['health', 'diet'], label: 'Meals', val: `${mealsLogged}/4`, p: mealsLogged / 4, color: '#ffc531', Icon: Salad },
     { to: ['grow', 'learn'], label: 'Learning', val: `${learnDone}/${allLearn.length}`, p: allLearn.length ? learnDone / allLearn.length : 0, color: '#8b6cff', Icon: GraduationCap },
     { to: ['health', 'gym'], label: 'Workout', val: `${gymDone}/2`, p: gymDone / 2, color: '#3ddc97', Icon: Dumbbell },
-    { to: ['health', 'body'], label: 'Water', val: `${water}/8`, p: water / 8, color: '#4cc9f0', Icon: Droplet }
+    { to: ['health', 'body'], label: 'Water', val: `${water}/${settings.water}`, p: water / settings.water, color: '#4cc9f0', Icon: Droplet }
   ]
 
   return (

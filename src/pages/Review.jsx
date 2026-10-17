@@ -6,7 +6,7 @@ import { monthSummary, inr, DEBT_CATS } from '../fin'
 import { Page, Card, Title, Ring, Num, spring } from '../ui'
 
 export default function Review() {
-  const { db } = useStore()
+  const { db, settings } = useStore()
   const today = dstr()
   const week = Array.from({ length: 7 }, (_, i) => addDays(today, i - 6))
 
@@ -27,7 +27,7 @@ export default function Review() {
   const score = planned ? done / planned : 0
   const areas = [
     ['tasks', tp ? td / tp : null], ['learning', lp ? ld / lp : null], ['habits', hp ? hd / hp : null],
-    ['workouts', gymDays / 5], ['meal logging', mealDays / 7], ['water', water / 7 / 8]
+    ['workouts', gymDays / 5], ['meal logging', mealDays / 7], ['water', water / 7 / settings.water]
   ].filter(a => a[1] !== null).sort((a, b) => a[1] - b[1])
   const weakest = areas[0]
   const st = allStats(db)

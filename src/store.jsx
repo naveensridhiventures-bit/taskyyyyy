@@ -4,7 +4,7 @@ import { configured, fetchAll, send } from './api'
 const Ctx = createContext(null)
 export const useStore = () => useContext(Ctx)
 
-const EMPTY = { tasks: [], diet: [], learning: [], gym: [], daily: [], habits: [], finance: [], debts: [], accounts: [] }
+const EMPTY = { tasks: [], diet: [], learning: [], gym: [], daily: [], habits: [], finance: [], debts: [], accounts: [], goals: [], settings: [] }
 const load = (k, f) => { try { return JSON.parse(localStorage.getItem(k)) ?? f } catch { return f } }
 
 /* ---------- small helpers used everywhere ---------- */
@@ -19,6 +19,16 @@ export const shortMonth = m => { const [y, mo] = m.split('-').map(Number); retur
 export const dayDefault = d => ({ id: `day-${d}`, date: d, water: 0, sleep: '', weight: '', win: '', top3: '', focus: 0, habits: '' })
 export const dayRow = (db, d) => db.daily.find(r => r.id === `day-${d}`) || dayDefault(d)
 export const isTrue = v => v === true || String(v).toLowerCase() === 'true'
+
+export const DEFAULT_SETTINGS = { kcal: 2000, protein: 80, water: 8, sleep: 8, morningHour: 7, reportHour: 21, email: '', mailMorning: true, mailReport: true }
+export function settingsOf(db) {
+  const r = (db.settings || []).find(x => x.id === 'main') || {}
+  const n = (v, d) => (v === undefined || v === '' || isNaN(Number(v)) ? d : Number(v))
+  const b = (v, d) => (v === undefined || v === '' ? d : isTrue(v))
+  const D = DEFAULT_SETTINGS
+  return { kcal: n(r.kcal, D.kcal), protein: n(r.protein, D.protein), water: n(r.water, D.water), sleep: n(r.sleep, D.sleep), morningHour: n(r.morningHour, D.morningHour), reportHour: n(r.reportHour, D.reportHour), email: r.email || '', mailMorning: b(r.mailMorning, D.mailMorning), mailReport: b(r.mailReport, D.mailReport) }
+}
+export const remindLabel = m => ({ '0': 'At time', '10': '10 min before', '30': '30 min before', '60': '1 hour before', '1440': '1 day before' }[String(m)] || `${m} min before`)
 export const dstr = (d = new Date()) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 const toDate = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d) }
 export const addDays = (s, n) => { const d = toDate(s); d.setDate(d.getDate() + n); return dstr(d) }
@@ -103,5 +113,8 @@ export function StoreProvider({ children }) {
   // one row per day holds water, sleep, weight, win, top3, focus minutes and habit ticks
   const patchDay = (d, patch) => { const cur = dayRow(dbRef.current, d); upsert('daily', { ...cur, ...(typeof patch === 'function' ? patch(cur) : patch) }) }
 
-  return <Ctx.Provider value={{ db, status, upsert, remove, sync, patchDay }}>{children}</Ctx.Provider>
+  const saveSettings = patch => upsert('settings', { id: 'main', ...settingsOf(dbRef.current), ...patch })
+  const settings = settingsOf(db)
+
+  return <Ctx.Provider value={{ db, status, upsert, remove, sync, patchDay, settings, saveSettings }}>{children}</Ctx.Provider>
 }

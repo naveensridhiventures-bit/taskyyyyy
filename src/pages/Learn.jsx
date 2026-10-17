@@ -1,12 +1,14 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Bell, Trash2, Plus, BookOpen, CalendarClock } from 'lucide-react'
 import { useStore, uid, dstr, addDays, isTrue, prettyDate, weekday } from '../store'
 import { Page, Card, Title, CheckBtn, Sheet, Empty, Fab, spring } from '../ui'
 import { TOPICS } from '../foods'
+import { useEdit } from '../editctx'
 
 export function LearnRow({ l, i = 0 }) {
   const { upsert, remove } = useStore()
+  const edit = useEdit()
   const today = dstr()
   const done = isTrue(l.done)
   const late = !done && l.date < today
@@ -24,34 +26,38 @@ export function LearnRow({ l, i = 0 }) {
         onDragEnd={(e, info) => { if (info.offset.x < -90) remove('learning', l.id) }}
       >
         <CheckBtn done={done} onChange={v => upsert('learning', { ...l, done: v })} />
-        <div className="row-main">
+        <motion.div className="row-main tappable" onTap={() => edit('learn', l)}>
           <div className="row-title">{l.title}</div>
           <div className="meta">
             {l.topic && <span className="tag" style={{ background: 'rgba(139,108,255,.25)', color: '#b9a6ff' }}><BookOpen size={11} /> {l.topic}</span>}
             {late && <span className="tag late"><CalendarClock size={11} /> Planned {prettyDate(l.date)}</span>}
           </div>
-          {late && <button className="mini" style={{ marginTop: 10 }} onClick={() => upsert('learning', { ...l, date: today })}>Move to today</button>}
-        </div>
+          {late && <button className="mini" style={{ marginTop: 10 }} onPointerDown={e => e.stopPropagation()} onClick={() => upsert('learning', { ...l, date: today })}>Move to today</button>}
+        </motion.div>
       </motion.div>
     </motion.div>
   )
 }
 
-export function LearnForm({ open, onClose }) {
-  const { upsert } = useStore()
+export function LearnForm({ open, onClose, edit }) {
+  const { upsert, remove } = useStore()
   const [title, setTitle] = useState('')
   const [topic, setTopic] = useState('')
   const [date, setDate] = useState(dstr())
+  useEffect(() => {
+    if (!open) return
+    if (edit) { setTitle(edit.title); setTopic(edit.topic || ''); setDate(edit.date) } else { setTitle(''); setTopic(''); setDate(dstr()) }
+  }, [open, edit?.id]) // eslint-disable-line
   const save = () => {
     if (!title.trim()) return
-    upsert('learning', { id: uid(), title: title.trim(), topic, date, done: false, createdAt: new Date().toISOString() })
-    setTitle(''); onClose()
+    upsert('learning', { ...(edit || {}), id: edit ? edit.id : uid(), title: title.trim(), topic, date, done: edit ? edit.done : false, createdAt: edit?.createdAt || new Date().toISOString() })
+    onClose()
   }
   return (
-    <Sheet open={open} onClose={onClose} title="Plan something to learn">
+    <Sheet open={open} onClose={onClose} title={edit ? 'Edit lesson' : 'Plan something to learn'}>
       <div className="field">
         <label>What will you learn?</label>
-        <input className="input" autoFocus value={title} onChange={e => setTitle(e.target.value)} onKeyDown={e => e.key === 'Enter' && save()} placeholder="React hooks, 20 English words..." />
+        <input className="input" value={title} onChange={e => setTitle(e.target.value)} onKeyDown={e => e.key === 'Enter' && save()} placeholder="React hooks, 20 English words..." />
       </div>
       <div className="field">
         <label>Topic</label>
@@ -60,7 +66,8 @@ export function LearnForm({ open, onClose }) {
         </div>
       </div>
       <div className="field"><label>Date</label><input type="date" className="input" value={date} onChange={e => setDate(e.target.value)} /></div>
-      <motion.button className="btn" whileTap={{ scale: 0.97 }} disabled={!title.trim()} onClick={save}>Add to learning plan</motion.button>
+      <motion.button className="btn" whileTap={{ scale: 0.97 }} disabled={!title.trim()} onClick={save}>{edit ? 'Save changes' : 'Add to learning plan'}</motion.button>
+      {edit && <button className="linkbtn" onClick={() => { remove('learning', edit.id); onClose() }}>Delete lesson</button>}
     </Sheet>
   )
 }

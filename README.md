@@ -41,3 +41,18 @@ Open the site on your phone, then Add to Home Screen. It works offline and syncs
   people you owe (partial payments, due dates), monthly charts
 - Sheet tabs created automatically: Daily, Habits, Finance, Debts, Accounts
 - After updating Code.gs: Deploy > Manage deployments > Edit > New version (keep your TOKEN value)
+
+## v8 features
+- Tap any task, lesson, habit, transaction, person or goal to edit it (Delete is inside the edit sheet)
+- Savings goals (Money > Goals) with progress rings and a "save X per month" plan
+- Settings (gear icon): calorie, protein, water and sleep targets, email address, report times
+- App lock: 4-digit PIN with fingerprint / face unlock (phones with a screen lock, over https)
+- Task reminders: set a time + "Remind me" on a task
+  - in-app alarm (rings while the app is open)
+  - Google Calendar alert (rings even when the app is closed)
+  - email reminder (checked every 5 minutes by your Apps Script)
+- Daily progress report email, morning plan email, weekly review (Sunday)
+
+### After updating Code.gs
+1. Run `setup`, then `installReminders` (accept Calendar + Gmail permissions), then `testEmail`.
+2. Deploy > Manage deployments > Edit > New version.

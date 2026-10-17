@@ -6,6 +6,7 @@ import { balances, debtTotals, monthSummary, catEmoji, kindOf, ACCOUNT_KINDS, in
 import { Page, Card, Title, Sheet, Seg, Num, Fab, rise, spring } from '../ui'
 import Txns, { TxnForm } from './Txns'
 import People, { DebtForm } from './People'
+import Goals, { GoalForm } from './Goals'
 
 function SetupCard() {
   const { upsert } = useStore()
@@ -160,15 +161,18 @@ function Overview({ go }) {
 export default function Money({ sub, setSub }) {
   const [tx, setTx] = useState(false)
   const [debt, setDebt] = useState(false)
+  const [goal, setGoal] = useState(false)
   return (
     <>
-      <Seg id="money" value={sub} onChange={setSub} options={[{ k: 'overview', label: 'Overview' }, { k: 'txns', label: 'Transactions' }, { k: 'people', label: 'People' }]} />
+      <Seg id="money" value={sub} onChange={setSub} options={[{ k: 'overview', label: 'Overview' }, { k: 'txns', label: 'History' }, { k: 'people', label: 'People' }, { k: 'goals', label: 'Goals' }]} />
       {sub === 'overview' && <Overview />}
       {sub === 'txns' && <Txns />}
       {sub === 'people' && <People />}
-      <Fab onClick={() => (sub === 'people' ? setDebt(true) : setTx(true))} />
+      {sub === 'goals' && <Goals />}
+      <Fab onClick={() => (sub === 'people' ? setDebt(true) : sub === 'goals' ? setGoal(true) : setTx(true))} />
       <TxnForm open={tx} onClose={() => setTx(false)} />
       <DebtForm open={debt} onClose={() => setDebt(false)} />
+      <GoalForm open={goal} onClose={() => setGoal(false)} />
     </>
   )
 }

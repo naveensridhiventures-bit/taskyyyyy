@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react'
 import { useStore, dstr, dayRow, num } from './store'
+import { vib } from './alarm'
 
 const Ctx = createContext(null)
 export const useTimer = () => useContext(Ctx)
@@ -45,7 +46,7 @@ export function TimerProvider({ children }) {
       patchDay(d, r => ({ focus: num(r.focus) + Math.round(cur.total / 60) }))
     }
     beep()
-    navigator.vibrate?.([200, 100, 200])
+    vib([200, 100, 200])
     navigator.serviceWorker?.ready.then(r => r.showNotification('DailyFlow timer', { body: cur.mode === 'focus' || cur.mode === 'deep' ? 'Focus session done. Take a short break.' : 'Break over. Back to it.', icon: '/pwa-192.png' })).catch(() => {})
   }, [patchDay])
 

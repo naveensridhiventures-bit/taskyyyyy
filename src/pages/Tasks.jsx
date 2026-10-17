@@ -1,11 +1,13 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Briefcase, User, Clock, Trash2, Plus, CalendarClock } from 'lucide-react'
-import { useStore, uid, dstr, addDays, isTrue, prettyDate, weekday, dayNum, fmtTime } from '../store'
+import { Briefcase, User, Clock, Trash2, Plus, CalendarClock, Bell } from 'lucide-react'
+import { useStore, uid, dstr, addDays, isTrue, prettyDate, weekday, dayNum, fmtTime, remindLabel } from '../store'
+import { useEdit } from '../editctx'
 import { Page, Card, Title, CheckBtn, Sheet, Empty, Fab, spring } from '../ui'
 
 export function TaskRow({ t, i = 0 }) {
   const { upsert, remove } = useStore()
+  const edit = useEdit()
   const today = dstr()
   const done = isTrue(t.done)
   const late = !done && t.date < today
@@ -23,37 +25,58 @@ export function TaskRow({ t, i = 0 }) {
         onDragEnd={(e, info) => { if (info.offset.x < -90) remove('tasks', t.id) }}
       >
         <CheckBtn done={done} onChange={v => upsert('tasks', { ...t, done: v })} />
-        <div className="row-main">
+        <motion.div className="row-main tappable" onTap={() => edit('task', t)}>
           <div className="row-title">{t.title}</div>
           <div className="meta">
             <span className={`tag ${t.type}`}>{t.type === 'work' ? <Briefcase size={11} /> : <User size={11} />} {t.type === 'work' ? 'Work' : 'Personal'}</span>
             {t.time && <span className="tag time"><Clock size={11} /> {fmtTime(t.time)}</span>}
+            {t.time && t.remind !== undefined && String(t.remind) !== '' && <span className="tag bell"><Bell size={11} /> {remindLabel(t.remind)}</span>}
             {late && <span className="tag late"><CalendarClock size={11} /> {prettyDate(t.date)}</span>}
           </div>
-          {late && <button className="mini" style={{ marginTop: 10 }} onClick={() => upsert('tasks', { ...t, date: today })}>Move to today</button>}
-        </div>
+          {late && <button className="mini" style={{ marginTop: 10 }} onPointerDown={e => e.stopPropagation()} onClick={() => upsert('tasks', { ...t, date: today })}>Move to today</button>}
+        </motion.div>
       </motion.div>
     </motion.div>
   )
 }
 
-export function TaskForm({ open, onClose, date }) {
-  const { upsert } = useStore()
+const REMIND = [['', 'None'], ['0', 'At time'], ['10', '10 min before'], ['30', '30 min before'], ['60', '1 hour before'], ['1440', '1 day before']]
+
+export function TaskForm({ open, onClose, date, edit }) {
+  const { upsert, remove } = useStore()
   const [title, setTitle] = useState('')
   const [type, setType] = useState('personal')
   const [d, setD] = useState(date || dstr())
   const [time, setTime] = useState('')
+  const [remind, setRemind] = useState('10')
+  const [notify, setNotify] = useState(['cal', 'mail'])
 
+  useEffect(() => {
+    if (!open) return
+    if (edit) {
+      setTitle(edit.title); setType(edit.type || 'personal'); setD(edit.date); setTime(edit.time || '')
+      setRemind(edit.remind === undefined || edit.remind === null ? '' : String(edit.remind))
+      setNotify(String(edit.notify || 'cal,mail').split(',').filter(Boolean))
+    } else { setTitle(''); setType('personal'); setD(date || dstr()); setTime(''); setRemind('10'); setNotify(['cal', 'mail']) }
+  }, [open, edit?.id]) // eslint-disable-line
+
+  const toggleN = k => setNotify(n => (n.includes(k) ? n.filter(x => x !== k) : [...n, k]))
   const save = () => {
     if (!title.trim()) return
-    upsert('tasks', { id: uid(), title: title.trim(), type, date: d, time, done: false, notes: '', createdAt: new Date().toISOString() })
-    setTitle(''); setTime(''); onClose()
+    const rem = time ? remind : ''
+    const changed = !edit || edit.date !== d || (edit.time || '') !== time || String(edit.remind ?? '') !== String(rem) || String(edit.notify || '') !== notify.join(',')
+    upsert('tasks', {
+      ...(edit || {}), id: edit ? edit.id : uid(), title: title.trim(), type, date: d, time,
+      done: edit ? edit.done : false, notes: edit?.notes || '', createdAt: edit?.createdAt || new Date().toISOString(),
+      remind: rem, notify: notify.join(','), reminded: changed ? false : (edit?.reminded ?? false)
+    })
+    onClose()
   }
   return (
-    <Sheet open={open} onClose={onClose} title="New task">
+    <Sheet open={open} onClose={onClose} title={edit ? 'Edit task' : 'New task'}>
       <div className="field">
         <label>What needs to be done?</label>
-        <input className="input" autoFocus value={title} onChange={e => setTitle(e.target.value)} onKeyDown={e => e.key === 'Enter' && save()} placeholder="Call the client, pay bills..." />
+        <input className="input" value={title} onChange={e => setTitle(e.target.value)} onKeyDown={e => e.key === 'Enter' && save()} placeholder="Call the client, pay bills..." />
       </div>
       <div className="field">
         <label>Type</label>
@@ -66,7 +89,23 @@ export function TaskForm({ open, onClose, date }) {
         <div className="field"><label>Date</label><input type="date" className="input" value={d} onChange={e => setD(e.target.value)} /></div>
         <div className="field"><label>Time</label><input type="time" className="input" value={time} onChange={e => setTime(e.target.value)} /></div>
       </div>
-      <motion.button className="btn" whileTap={{ scale: 0.97 }} disabled={!title.trim()} onClick={save}>Add task</motion.button>
+      <div className="field remind-box">
+        <label><Bell size={13} style={{ verticalAlign: -2 }} /> Remind me</label>
+        {time ? (
+          <>
+            <div className="chips">{REMIND.map(([k, l]) => <button key={k} className={`chip ${remind === k ? 'on' : ''}`} style={{ '--c': '#ffc531' }} onClick={() => setRemind(k)}>{l}</button>)}</div>
+            {remind !== '' && (
+              <div className="chips" style={{ marginTop: 8 }}>
+                <button className={`chip ${notify.includes('cal') ? 'on' : ''}`} style={{ '--c': '#4cc9f0' }} onClick={() => toggleN('cal')}>📅 Calendar alert</button>
+                <button className={`chip ${notify.includes('mail') ? 'on' : ''}`} style={{ '--c': '#3ddc97' }} onClick={() => toggleN('mail')}>✉️ Email</button>
+              </div>
+            )}
+            {remind !== '' && <small className="hint">An alarm also rings inside the app when it is open.</small>}
+          </>
+        ) : <small className="hint">Pick a time to turn on alarm, calendar and email reminders.</small>}
+      </div>
+      <motion.button className="btn" whileTap={{ scale: 0.97 }} disabled={!title.trim()} onClick={save}>{edit ? 'Save changes' : 'Add task'}</motion.button>
+      {edit && <button className="linkbtn" onClick={() => { remove('tasks', edit.id); onClose() }}>Delete task</button>}
     </Sheet>
   )
 }

@@ -4,7 +4,6 @@ import { Droplet, Moon, Minus, Plus, Scale } from 'lucide-react'
 import { useStore, dstr, dayRow, num, prettyDate } from '../store'
 import { Page, Card, Title, Num, spring } from '../ui'
 
-const GOAL = 8
 
 function Weight() {
   const { db, patchDay } = useStore()
@@ -38,7 +37,8 @@ function Weight() {
 }
 
 export default function Body() {
-  const { db, patchDay } = useStore()
+  const { db, patchDay, settings } = useStore()
+  const GOAL = settings.water, SLEEP_GOAL = settings.sleep
   const today = dstr()
   const day = dayRow(db, today)
   const water = num(day.water)
@@ -67,10 +67,10 @@ export default function Body() {
         <div className="card-h"><h4><Moon size={16} style={{ verticalAlign: -2 }} /> Last night's sleep</h4></div>
         <div className="stepper big">
           <motion.button whileTap={{ scale: 0.85 }} onClick={() => setSleep(sleep - 0.5)}><Minus size={20} /></motion.button>
-          <div><b><Num value={sleep} decimals={1} /> h</b><small>{sleep === 0 ? 'Tap + to log' : sleep < 6 ? 'Too little. Aim for 7 to 8 h' : sleep <= 9 ? 'Good recovery' : 'Plenty of rest'}</small></div>
+          <div><b><Num value={sleep} decimals={1} /> h</b><small>{sleep === 0 ? 'Tap + to log' : sleep < SLEEP_GOAL - 1.5 ? `Too little. Your goal is ${SLEEP_GOAL} h` : sleep <= SLEEP_GOAL + 1.5 ? 'Good recovery' : 'Plenty of rest'}</small></div>
           <motion.button whileTap={{ scale: 0.85 }} onClick={() => setSleep((sleep || 6) + 0.5)}><Plus size={20} /></motion.button>
         </div>
-        <div className="bar big"><motion.i animate={{ width: `${Math.min(100, (sleep / 8) * 100)}%` }} transition={spring} style={{ background: 'linear-gradient(90deg,#8b6cff,#4cc9f0)' }} /></div>
+        <div className="bar big"><motion.i animate={{ width: `${Math.min(100, (sleep / SLEEP_GOAL) * 100)}%` }} transition={spring} style={{ background: 'linear-gradient(90deg,#8b6cff,#4cc9f0)' }} /></div>
       </Card>
       <Weight />
     </Page>

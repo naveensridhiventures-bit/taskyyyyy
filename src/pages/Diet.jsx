@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, X, ChevronLeft, ChevronRight, Check } from 'lucide-react'
 import { useStore, dstr, addDays, prettyDate } from '../store'
 import { Page, Card, Title, Sheet, Num, spring } from '../ui'
-import { MEALS, FOODS, nutrition, KCAL_GOAL, PROTEIN_GOAL } from '../foods'
+import { MEALS, FOODS, nutrition } from '../foods'
 
 export const dietId = (date, meal) => `diet-${date}-${meal}`
 export const splitItems = s => (s ? String(s).split('|').filter(Boolean) : [])
@@ -50,7 +50,8 @@ function FoodPicker({ meal, date, onClose }) {
 }
 
 export default function Diet() {
-  const { db, upsert } = useStore()
+  const { db, upsert, settings } = useStore()
+  const KCAL_GOAL = settings.kcal, PROTEIN_GOAL = settings.protein
   const today = dstr()
   const [date, setDate] = useState(today)
   const [pick, setPick] = useState(null)

@@ -4,13 +4,14 @@ import { HandCoins, ArrowDownLeft, ArrowUpRight, CheckCheck, CalendarClock } fro
 import { useStore, uid, dstr, num, prettyDate } from '../store'
 import { remaining, debtTotals, inr } from '../fin'
 import { Page, Card, Sheet, Swipe, Num, Empty, rise } from '../ui'
+import { useEdit } from '../editctx'
 import { AccountChips } from './Txns'
 
 const COLORS = ['#ff8a4c', '#4cc9f0', '#8b6cff', '#3ddc97', '#ff5d73', '#ffc531']
 const colorOf = n => COLORS[[...n].reduce((s, c) => s + c.charCodeAt(0), 0) % COLORS.length]
 
-export function DebtForm({ open, onClose }) {
-  const { db, upsert } = useStore()
+export function DebtForm({ open, onClose, edit }) {
+  const { db, upsert, remove } = useStore()
   const [dir, setDir] = useState('receive')
   const [person, setPerson] = useState('')
   const [amount, setAmount] = useState('')
@@ -18,19 +19,23 @@ export function DebtForm({ open, onClose }) {
   const [due, setDue] = useState('')
   const [note, setNote] = useState('')
   const [acc, setAcc] = useState('')
-  useEffect(() => { if (open) setDate(dstr()) }, [open])
+  useEffect(() => {
+    if (!open) return
+    if (edit) { setDir(edit.direction); setPerson(edit.person); setAmount(String(edit.amount)); setDate(edit.date || dstr()); setDue(edit.due || ''); setNote(edit.note || ''); setAcc('') }
+    else { setDir('receive'); setPerson(''); setAmount(''); setDate(dstr()); setDue(''); setNote(''); setAcc('') }
+  }, [open, edit?.id]) // eslint-disable-line
   const names = [...new Set(db.debts.map(d => d.person))].slice(0, 8)
   const amt = parseFloat(amount)
   const valid = person.trim() && amt > 0
 
   const save = () => {
     if (!valid) return
-    upsert('debts', { id: uid(), person: person.trim(), direction: dir, amount: amt, paid: 0, date, due, note: note.trim() })
-    if (acc) upsert('finance', { id: uid(), date, type: dir === 'receive' ? 'expense' : 'income', category: dir === 'receive' ? 'Lent money' : 'Borrowed money', amount: amt, account: acc, toAccount: '', note: `${dir === 'receive' ? 'Lent to' : 'Borrowed from'} ${person.trim()}` })
-    setPerson(''); setAmount(''); setNote(''); setDue(''); setAcc(''); onClose()
+    upsert('debts', { ...(edit || {}), id: edit ? edit.id : uid(), person: person.trim(), direction: dir, amount: amt, paid: edit ? edit.paid : 0, date, due, note: note.trim() })
+    if (!edit && acc) upsert('finance', { id: uid(), date, type: dir === 'receive' ? 'expense' : 'income', category: dir === 'receive' ? 'Lent money' : 'Borrowed money', amount: amt, account: acc, toAccount: '', note: `${dir === 'receive' ? 'Lent to' : 'Borrowed from'} ${person.trim()}` })
+    onClose()
   }
   return (
-    <Sheet open={open} onClose={onClose} title="Add money to track">
+    <Sheet open={open} onClose={onClose} title={edit ? 'Edit entry' : 'Add money to track'}>
       <div className="typeseg">
         <button className={dir === 'receive' ? 'on' : ''} style={dir === 'receive' ? { background: '#3ddc97' } : {}} onClick={() => setDir('receive')}>They owe me</button>
         <button className={dir === 'pay' ? 'on' : ''} style={dir === 'pay' ? { background: '#ff5d73' } : {}} onClick={() => setDir('pay')}>I owe them</button>
@@ -39,20 +44,21 @@ export function DebtForm({ open, onClose }) {
       <div className="field">
         <label>Person</label>
         <input className="input" value={person} onChange={e => setPerson(e.target.value)} placeholder="Name" />
-        {names.length > 0 && <div className="chips" style={{ marginTop: 6 }}>{names.map(n => <button key={n} className="chip" onClick={() => setPerson(n)}>{n}</button>)}</div>}
+        {!edit && names.length > 0 && <div className="chips" style={{ marginTop: 6 }}>{names.map(n => <button key={n} className="chip" onClick={() => setPerson(n)}>{n}</button>)}</div>}
       </div>
       <div className="two">
         <div className="field"><label>Given on</label><input type="date" className="input" value={date} onChange={e => setDate(e.target.value)} /></div>
         <div className="field"><label>Due date</label><input type="date" className="input" value={due} onChange={e => setDue(e.target.value)} /></div>
       </div>
       <div className="field"><label>Note</label><input className="input" value={note} onChange={e => setNote(e.target.value)} placeholder="Reason (optional)" /></div>
-      {db.accounts.length > 0 && (
+      {!edit && db.accounts.length > 0 && (
         <div className="field">
           <label>{dir === 'receive' ? 'Take this money out of' : 'Add this money to'}</label>
           <AccountChips value={acc} onChange={setAcc} allowNone />
         </div>
       )}
-      <motion.button className="btn" whileTap={{ scale: 0.97 }} disabled={!valid} onClick={save}>Save</motion.button>
+      <motion.button className="btn" whileTap={{ scale: 0.97 }} disabled={!valid} onClick={save}>{edit ? 'Save changes' : 'Save'}</motion.button>
+      {edit && <button className="linkbtn" onClick={() => { remove('debts', edit.id); onClose() }}>Delete entry</button>}
     </Sheet>
   )
 }
@@ -85,6 +91,7 @@ function PayForm({ debt, onClose }) {
 
 function DebtCard({ d }) {
   const { remove } = useStore()
+  const edit = useEdit()
   const rem = remaining(d)
   const [paying, setPaying] = useState(null)
   const rec = d.direction === 'receive'
@@ -93,7 +100,7 @@ function DebtCard({ d }) {
   return (
     <Swipe onDelete={() => remove('debts', d.id)} className="row debt">
       <div className="avatar" style={{ background: colorOf(d.person) }}>{d.person[0]?.toUpperCase()}</div>
-      <div className="row-main">
+      <motion.div className="row-main tappable" onTap={() => edit('debt', d)}>
         <div className="debt-top"><div className="row-title" style={{ '--x': 0 }}>{d.person}</div><b style={{ color: rem ? (rec ? '#3ddc97' : '#ff8fa0') : 'var(--muted)' }}>{inr(rem)}</b></div>
         <div className="meta">
           <span className="tag">of {inr(num(d.amount))}</span>
@@ -101,8 +108,8 @@ function DebtCard({ d }) {
           {d.note && <span className="tag">{d.note}</span>}
         </div>
         <div className="bar" style={{ marginTop: 9 }}><motion.i initial={{ width: 0 }} animate={{ width: `${pct * 100}%` }} transition={{ duration: 0.9 }} style={{ background: rec ? '#3ddc97' : '#ff8fa0' }} /></div>
-        {rem > 0 && <div className="debt-actions"><button className="mini" onClick={() => setPaying(d)}>{rec ? 'Received' : 'Paid'}</button></div>}
-      </div>
+        {rem > 0 && <div className="debt-actions"><button className="mini" onPointerDown={e => e.stopPropagation()} onClick={() => setPaying(d)}>{rec ? 'Received' : 'Paid'}</button></div>}
+      </motion.div>
       <Sheet open={!!paying} onClose={() => setPaying(null)} title={rec ? 'Record money received' : 'Record payment'}>
         <PayForm debt={paying} onClose={() => setPaying(null)} />
       </Sheet>

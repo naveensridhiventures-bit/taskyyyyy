@@ -26,3 +26,6 @@ export async function send(ops) {
   if (!j.ok) throw new Error(j.error || 'Save failed')
   return j
 }
+
+// ask the Apps Script to run one whitelisted function (for example: send me the report now)
+export const runFn = fn => send([{ op: 'run', fn }])
